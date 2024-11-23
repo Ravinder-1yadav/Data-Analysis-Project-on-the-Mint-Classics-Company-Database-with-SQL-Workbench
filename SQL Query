@@ -1,0 +1,94 @@
+-- get total stock in warehouse
+select warehouseName , sum(quantityInstock) as totalstock
+from products
+join warehouses on  warehouses.warehousecode = products.warehouseCode
+group by warehouseName 
+order by totalstock desc; 
+
+-- get total stock of each product line
+select warehouseName, sum(quantityInstock) as totalstock , productLine 
+from products
+join warehouses on warehouses.warehouseCode = products.warehouseCode
+group by warehouseName , productLine
+order by totalstock desc;
+
+-- get total stock for each product
+select productName, sum(quantityInStock) as totalstock , warehouseName 
+from products
+join warehouses on warehouses.warehouseCode = products.warehouseCode
+group by productName, warehouseName
+order by totalstock desc;
+ 
+ -- get comprenshive data between total stock and total orders
+ select productName , sum(quantityordered) as totalorders , sum(quantityInStock - quantityordered) as totalstock
+ from products
+ join orderdetails on orderdetails.productCode = products.productCode
+ group by productName
+ order by totalstock desc;
+ 
+ -- get total orders by time
+ select orderDate, totalorders
+ from ORDERS AS O
+ LEFT JOIN (SELECT orderNumber, sum(quantityordered) as totalorders
+ from orderdetails 
+ group by orderNumber) od
+ on o.orderNumber = od.orderNumber
+ order BY orderDate desc;
+ 
+ -- get total revenue for each warehouse
+ select WarehouseName as warehouse , sum(quantityordered), sum(quantityordered *  priceEach) as totalrevenue
+ from (products p
+inner join orderdetails as o on o.productCode =  p.productCode)
+join warehouses on warehouses.warehousecode = p.warehouseCode
+group by warehouse 
+order by totalrevenue desc;
+
+-- get total revenue by each productLine 
+select  productLine, sum(quantityordered) as totalorders, sum(quantityordered*priceEach) as totalrevenue 
+from products
+join orderdetails on orderdetails.productCode = products.productCode
+group by  productLine
+order by totalrevenue asc;
+
+-- Total revenue based on product
+select productName, sum(quantityInStock), sum(quantityordered) as totalorders, sum(quantityordered * priceEach) as totalrevenue
+from products
+inner join orderdetails on products.productcode = orderdetails.productCode
+group by productName
+order by totalrevenue;
+
+-- Customer
+-- get customer profile data including orders and payments
+select  c.customerName,c.customerNumber , c.city , c.country ,totalorder , totalpayments, sum(totalpayments-creditLimit) as remaninglimit
+from ( select customerNumber,
+customerName,
+country,
+creditLimit,
+city
+from customers) c
+join (select customerNumber,sum(amount) as totalpayments
+from payments
+group by customerNumber) p
+on c.customerNumber =p.customerNumber
+join (select customerNumber , count(orderNumber) as totalorder
+from orders
+group by customerNumber) o
+on c.customerNumber = o.customerNumber
+group by customerNumber
+order by totalpayments desc;
+
+-- Employee Performance
+-- get data of number od employees in each office
+select o.officecode, o.city, o.country, count(employeeNumber) as totalemployee 
+from offices o
+join employees e on o.officeCode = e.officecode
+group by country,officeCode,city
+order by totalemployee;
+
+-- get employee performance data
+select em.employeeNumber, em.firstName, em.lastName , em.jobTitle, count(o.orderNumber) as totalsales
+from employees as em
+join customers as cm on em.employeeNumber = cm.salesrepEmployeeNumber
+join orders as o on cm.customerNumber = o.customerNumber
+group by employeeNumber
+order by totalsales desc;
